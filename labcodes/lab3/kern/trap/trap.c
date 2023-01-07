@@ -48,6 +48,13 @@ idt_init(void) {
       *     You don't know the meaning of this instruction? just google it! and check the libs/x86.h to know more.
       *     Notice: the argument of lidt is idt_pd. try to find it!
       */
+        extern uintptr_t __vectors[]; // 中断处理例程入口地址数组
+      int i;
+      for (i = 0; i < sizeof(idt) / sizeof(idt[0]); i ++) {
+          SETGATE(idt[i], 0, GD_KTEXT, __vectors[i], DPL_KERNEL);  // 设置内核态的中断处理例程入口地址
+      }
+      SETGATE(idt[T_SWITCH_TOK], 0, GD_KTEXT, __vectors[T_SWITCH_TOK], DPL_USER); // 设置用户态的中断处理例程入口地址
+      lidt(&idt_pd); // 加载中断描述符表
 }
 
 static const char *
@@ -186,6 +193,10 @@ trap_dispatch(struct trapframe *tf) {
          * (2) Every TICK_NUM cycle, you can print some info using a funciton, such as print_ticks().
          * (3) Too Simple? Yes, I think so!
          */
+        ticks ++; // 记录时钟中断次数
+        if (ticks % TICK_NUM == 0) { // 每 TICK_NUM 次时钟中断打印一次时钟中断次数
+            print_ticks();
+        }
         break;
     case IRQ_OFFSET + IRQ_COM1:
         c = cons_getc();
