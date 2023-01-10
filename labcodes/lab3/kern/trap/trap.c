@@ -48,7 +48,7 @@ idt_init(void) {
       *     You don't know the meaning of this instruction? just google it! and check the libs/x86.h to know more.
       *     Notice: the argument of lidt is idt_pd. try to find it!
       */
-        extern uintptr_t __vectors[]; // 中断处理例程入口地址数组
+      extern uintptr_t __vectors[]; // 中断处理例程入口地址数组
       int i;
       for (i = 0; i < sizeof(idt) / sizeof(idt[0]); i ++) {
           SETGATE(idt[i], 0, GD_KTEXT, __vectors[i], DPL_KERNEL);  // 设置内核态的中断处理例程入口地址
