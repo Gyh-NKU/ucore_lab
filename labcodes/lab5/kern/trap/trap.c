@@ -56,6 +56,14 @@ idt_init(void) {
      /* LAB5 YOUR CODE */ 
      //you should update your lab1 code (just add ONE or TWO lines of code), let user app to use syscall to get the service of ucore
      //so you should setup the syscall interrupt gate in here
+      extern uintptr_t __vectors[]; // 中断处理例程入口地址数组
+      int i;
+      for (i = 0; i < sizeof(idt) / sizeof(idt[0]); i ++) {
+          SETGATE(idt[i], 0, GD_KTEXT, __vectors[i], DPL_KERNEL);  // 设置内核态的中断处理例程入口地址
+      }
+      SETGATE(idt[T_SWITCH_TOK], 0, GD_KTEXT, __vectors[T_SWITCH_TOK], DPL_USER); // 设置用户态的中断处理例程入口地址
+      SETGATE(idt[T_SYSCALL], 1, GD_KTEXT, __vectors[T_SYSCALL], DPL_USER);
+      lidt(&idt_pd); // 加载中断描述符表
 }
 
 static const char *
@@ -223,7 +231,12 @@ trap_dispatch(struct trapframe *tf) {
         /* you should upate you lab1 code (just add ONE or TWO lines of code):
          *    Every TICK_NUM cycle, you should set current process's current->need_resched = 1
          */
-  
+        ticks ++; // 记录时钟中断次数
+        if (ticks % TICK_NUM == 0) { // 每 TICK_NUM 次时钟中断打印一次时钟中断次数
+            // print_ticks();
+            assert(current != NULL);
+            current->need_resched = 1;
+        }
         break;
     case IRQ_OFFSET + IRQ_COM1:
         c = cons_getc();
